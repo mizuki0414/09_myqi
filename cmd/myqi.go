@@ -21,7 +21,7 @@ func FetchQiitaData(accessToken string) []Data {
 	baseUrl := "https://qiita.com/api/v2/items?query=user:mizuki0414"
 	// 様々な検索条件をかけるときはbaseUrlをv2/までにして他を変数で定義してurl.Parseで合体させる
 	endpointURL, err := url.Parse(baseUrl)
-	_ = err
+
 	var resp = &http.Response{}
 	// qiitaのアクセストークンがない場合はAuthorizationを付与しない
 	// 2パターン作っておく。
@@ -37,6 +37,7 @@ func FetchQiitaData(accessToken string) []Data {
 				"Authorization": {"Bearer " + accessToken},
 			},
 		})
+
 	} else {
 		fmt.Println("***** Access Token 無しでQiitaAPIを叩いています アクセス制限に注意して下さい*****")
 
@@ -51,10 +52,10 @@ func FetchQiitaData(accessToken string) []Data {
 	defer resp.Body.Close()
 
 	var datas []Data
-
+	_ = err
 	/*********一覧取得では、ページビューがnilになるので個別で取りに行ってデータを得る*****************/
 	for i, val := range datas {
-
+		fmt.Println(val.ID)
 		article_id := val.ID
 		baseUrl := "https://qiita.com/api/v2/items/"
 		endpointURL2, err := url.Parse(baseUrl + article_id)
