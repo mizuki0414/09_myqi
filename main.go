@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"https://github.com/mizuki0414/09_myqi/cmd"
+	"github.com/mizuki0414/qi/cmd"
 	"github.com/urfave/cli"
 )
 
