@@ -15,7 +15,7 @@ func main() {
 
 	app.Commands = []cli.Command{
 		{
-			Name:  "myqi",
+			Name:  "article",
 			Usage: "qiita + mine : you get yours articles",
 			Action: func(c *cli.Context) error {
 				qiitaToken := os.Getenv("QIITA_TOKEN")

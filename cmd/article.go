@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 )
@@ -14,6 +16,7 @@ type Data struct {
 	Title          string `json:"title"`
 	LikesCount     int    `json:"likes_count"`
 	PageViewsCount int    `json:"page_views_count"`
+	CommentsCount  int    `json:"comments_count"`
 }
 
 func FetchQiitaData(accessToken string) []Data {
@@ -21,6 +24,14 @@ func FetchQiitaData(accessToken string) []Data {
 	baseUrl := "https://qiita.com/api/v2/items?query=user:mizuki0414"
 	// 様々な検索条件をかけるときはbaseUrlをv2/までにして他を変数で定義してurl.Parseで合体させる
 	endpointURL, err := url.Parse(baseUrl)
+	if err != nil {
+		panic(err)
+	}
+
+	b, err := json.Marshal(Data{})
+	if err != nil {
+		panic(err)
+	}
 
 	var resp = &http.Response{}
 	// qiitaのアクセストークンがない場合はAuthorizationを付与しない
@@ -37,7 +48,6 @@ func FetchQiitaData(accessToken string) []Data {
 				"Authorization": {"Bearer " + accessToken},
 			},
 		})
-
 	} else {
 		fmt.Println("***** Access Token 無しでQiitaAPIを叩いています アクセス制限に注意して下さい*****")
 
@@ -51,15 +61,37 @@ func FetchQiitaData(accessToken string) []Data {
 	}
 	defer resp.Body.Close()
 
+	if err != nil {
+		panic(err)
+	}
+
+	b, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
 	var datas []Data
-	_ = err
+
+	if err := json.Unmarshal(b, &datas); err != nil {
+		fmt.Println("JSON Unmarshal error:", err)
+		return nil
+	}
+
 	/*********一覧取得では、ページビューがnilになるので個別で取りに行ってデータを得る*****************/
 	for i, val := range datas {
-		fmt.Println(val.ID)
+
 		article_id := val.ID
 		baseUrl := "https://qiita.com/api/v2/items/"
 		endpointURL2, err := url.Parse(baseUrl + article_id)
-		_ = err
+		if err != nil {
+			panic(err)
+		}
+
+		b, err := json.Marshal(Data{})
+		if err != nil {
+			panic(err)
+		}
+
 		resp, err = http.DefaultClient.Do(&http.Request{
 			URL:    endpointURL2,
 			Method: "GET",
@@ -69,7 +101,21 @@ func FetchQiitaData(accessToken string) []Data {
 			},
 		})
 
+		if err != nil {
+			panic(err)
+		}
+
+		b, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			panic(err)
+		}
+
 		var m map[string]interface{}
+
+		if err := json.Unmarshal(b, &m); err != nil {
+			fmt.Println("JSON Unmarshal error:", err)
+			return nil
+		}
 
 		datas[i].PageViewsCount = int(m["page_views_count"].(float64))
 	}
@@ -78,12 +124,16 @@ func FetchQiitaData(accessToken string) []Data {
 
 // データの出力
 func OutputQiitaData(datas []Data) {
-	fmt.Println("************************自分のQiita投稿一覧******************************")
+	fmt.Println("(>'A`)>")
+	fmt.Println("( ヘヘ")
+	fmt.Println("★Qiitaの投稿一覧★")
 	for _, val := range datas {
+		fmt.Println("-------------------------------------------------------------------------")
 		fmt.Printf("%-15v%v%v\n", "ID", ": ", val.ID)
 		fmt.Printf("%-15v%v%v\n", "Title", ": ", val.Title)
 		fmt.Printf("%-12v%v%v\n", "いいね", ": ", val.LikesCount)
 		fmt.Printf("%-9v%v%v\n", "ページビュー", ": ", val.PageViewsCount)
+		fmt.Printf("%-9v%v%v\n", "コメント　　", ": ", val.CommentsCount)
 		fmt.Printf("%-15v%v%v\n", "URL", ": ", val.Url)
 		fmt.Println("-------------------------------------------------------------------------")
 	}
